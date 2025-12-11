@@ -18,7 +18,7 @@ class UUIDFolder {
 
   constructor() {
     this.minLength = 3;
-    this.maxLength = 36; // 0 for no maxLength
+    this.maxLength = 32; // 0 for no maxLength
     this.memory = new Map(); //To avoid conflict
   }
 
