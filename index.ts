@@ -1,12 +1,17 @@
 import UUIDError from "./uuid_error";
 
 /*UUIDBase is the parent:
-Let's say we have 1k calls for 1 instance of a UUID, instead
-of saving all to memory blindly, we save the parent (full uuid) - and work with it's children (shortened versions). 
+Let's say we have 50 calls for 1 instance of a UUID, instead
+of saving all to memory blindly, we save the parent (3-4 characters of the 
+UUID) - and work with it's children (slighlty longer versions (5 chars and 
+above)). 
 
-Instead of having to look up the entire array length to find if there is a 
-conflict in an O(n) fashion, we traverse the bucket-like parent list instead   
-O(log n)*/
+This way, instead of having to look up the entire array length to find if
+there is a  conflict in an O(n) fashion, we traverse the bucket-like parent 
+list instead O(log n). 
+
+Disclaimer: I know Maps are O(n) look ups, but this is made for fun and the current DS/A would be better than plain look ups had it been done with arrays.
+*/
 
 type UUIDBase = {
   children: Set<string>;
