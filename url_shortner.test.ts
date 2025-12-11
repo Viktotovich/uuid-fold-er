@@ -33,6 +33,40 @@ test("Sanity check, processes minLength correctly", () => {
   expect(UUIDController.process(uuid)).toBe(expected);
 });
 
+test("Handles conflicts gracefully", () => {
+  const uuid = "8b4da03b-88b2-4a63-a55a-940eff4c549a";
+  const minLength = 11;
+  const maxLength = 20;
+  const expected = "8b4da03b-88b2";
+
+  const UUIDController = new UUIDFolder();
+  UUIDController.init(minLength, maxLength);
+
+  //We run it twice, should be x2 in memory
+  UUIDController.process(uuid);
+  UUIDController.process(uuid);
+
+  expect(UUIDController.process(uuid)).toBe(expected);
+});
+
+test("Handles super conflicts gracefully", () => {
+  const uuid = crypto.randomUUID();
+  const minLength = 11;
+  const maxLength = 20;
+  const expected = uuid.slice(0, 15);
+
+  const UUIDController = new UUIDFolder();
+  UUIDController.init(minLength, maxLength);
+
+  //We run it x4, should be x4 instances in memory
+  UUIDController.process(uuid);
+  UUIDController.process(uuid);
+  UUIDController.process(uuid);
+  UUIDController.process(uuid);
+
+  expect(UUIDController.process(uuid)).toBe(expected);
+});
+
 test("Throws on minLength x maxLength mismatch", () => {
   const uuid = "8b4da03b-88b2-4a63-a55a-940eff4c549a";
   const minLength = 10;
