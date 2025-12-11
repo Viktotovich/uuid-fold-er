@@ -17,7 +17,7 @@ test("Shortens the UUID", () => {
 
   const UUIDController = new UUIDFolder(minLength, maxLength);
 
-  expect(UUIDController.shorten(uuid)).toBe(expected);
+  expect(UUIDController.process(uuid)).toBe(expected);
 });
 
 test("Sanity check, processes minLength correctly", () => {
@@ -29,7 +29,7 @@ test("Sanity check, processes minLength correctly", () => {
 
   const UUIDController = new UUIDFolder(minLength, maxLength);
 
-  expect(UUIDController.shorten(uuid)).toBe(expected);
+  expect(UUIDController.process(uuid)).toBe(expected);
 });
 
 test("Throws on minLength x maxLength mismatch", () => {
@@ -39,7 +39,7 @@ test("Throws on minLength x maxLength mismatch", () => {
 
   const UUIDController = new UUIDFolder(minLength, maxLength);
 
-  expect(UUIDController.shorten(uuid)).toBe(typeof Error);
+  expect(UUIDController.process(uuid)).toBe(typeof Error);
 });
 
 //Methods testing
