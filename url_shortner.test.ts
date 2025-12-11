@@ -15,7 +15,8 @@ test("Shortens the UUID", () => {
   const maxLength = 0;
   const expected = "8bd4da,";
 
-  const UUIDController = new UUIDFolder(minLength, maxLength);
+  const UUIDController = new UUIDFolder();
+  UUIDController.init(minLength, maxLength);
 
   expect(UUIDController.process(uuid)).toBe(expected);
 });
@@ -27,7 +28,8 @@ test("Sanity check, processes minLength correctly", () => {
   const maxLength = 0;
   const expected = "8b4da03b-88b2";
 
-  const UUIDController = new UUIDFolder(minLength, maxLength);
+  const UUIDController = new UUIDFolder();
+  UUIDController.init(minLength, maxLength);
 
   expect(UUIDController.process(uuid)).toBe(expected);
 });
@@ -37,7 +39,8 @@ test("Throws on minLength x maxLength mismatch", () => {
   const minLength = 10;
   const maxLength = 5;
 
-  const UUIDController = new UUIDFolder(minLength, maxLength);
+  const UUIDController = new UUIDFolder();
+  UUIDController.init(minLength, maxLength);
 
   expect(UUIDController.process(uuid)).toBe(typeof Error);
 });
@@ -47,7 +50,8 @@ test("Normalization works", () => {
   const uuid = randomUUID();
   const URLFormat = new URL(`https://example.com/blogs/tests/${uuid}`);
 
-  const UUIDController = new UUIDFolder(2, 10);
+  const UUIDController = new UUIDFolder();
+  UUIDController.init(4, 10);
 
   expect(UUIDController.normalize(URLFormat)).toBe(uuid);
 });
@@ -56,7 +60,8 @@ test("Normalization Double Check", () => {
   const uuid = randomUUID();
   const URLFormat = `/${uuid}`;
 
-  const UUIDController = new UUIDFolder(2, 10);
+  const UUIDController = new UUIDFolder();
+  UUIDController.init(4, 10);
 
   expect(UUIDController.normalize(URLFormat)).toBe(uuid);
 });

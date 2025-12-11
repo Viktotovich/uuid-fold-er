@@ -16,10 +16,15 @@ class UUIDFolder {
   maxLength: number;
   memory: Map<string, UUIDBase>;
 
-  constructor(minLength: number, maxLength: number) {
-    this.minLength = minLength;
-    this.maxLength = maxLength; // 0 for no maxLength
+  constructor() {
+    this.minLength = 3;
+    this.maxLength = 36; // 0 for no maxLength
     this.memory = new Map(); //To avoid conflict
+  }
+
+  init(min: number, max: number) {
+    this.changeMinLength(min);
+    this.changeMaxLength(max === 0 ? 36 : max);
   }
 
   changeMinLength(newMin: number) {
@@ -53,9 +58,26 @@ class UUIDFolder {
       this.memory.set(uuidBase, {
         children: new Set(),
       });
+
+      //get the parent we just set
+      const parentMap = this.memory.get(uuidBase);
+
+      //It will 100% exists, just TS complaining if we dont add this
+      if (!parentMap) return;
+
+      //Add the new child
+      const newUUID = this.recursivelyGetShortenedUUID(parentMap, safeUUID, 0);
+      parentMap!.children.add(newUUID);
+
       //exists in memory, check if conflicting
     } else {
       //TODO:
+      const newUUID = this.recursivelyGetShortenedUUID(
+        uuidInMemory,
+        safeUUID,
+        0
+      );
+      uuidInMemory.children.add(newUUID);
     }
   }
 
@@ -82,11 +104,29 @@ class UUIDFolder {
   }
 
   private conflictCheck(map: UUIDBase, uuid: string) {
-    const conflictFreeURL = null; //TODO
+    return map.children.has(uuid);
   }
 
-  private recursivelyIterateOnOpts(uuid: string) {
-    //
+  private recursivelyGetShortenedUUID(
+    map: UUIDBase,
+    uuid: string,
+    iterationCount: number
+  ): string {
+    const charsAllowed = iterationCount + this.minLength;
+    const isExceeding = charsAllowed > this.maxLength;
+
+    if (isExceeding) {
+      throw new UUIDError(
+        "URL conflicts cannot be resolved: It's reccomended that you either increase the max length of the UUID or rotate the UUID key for this specific URL - as a limit has been reached on the maxLength, with no suitable safe UUID URL's available."
+      );
+    }
+
+    const unsafeShortnedUUID = uuid.slice(0, charsAllowed);
+
+    const hasConflict = this.conflictCheck(map, unsafeShortnedUUID);
+    if (!hasConflict) return unsafeShortnedUUID;
+
+    return this.recursivelyGetShortenedUUID(map, uuid, iterationCount + 1);
   }
 }
 
