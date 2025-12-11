@@ -12,7 +12,7 @@ test("Shortens the UUID", () => {
   //Can't have it dynamic - otherwise what are we testing for xD
   const uuid = "8b4da03b-88b2-4a63-a55a-940eff4c549a";
   const minLength = 6;
-  const maxLength = 0;
+  const maxLength = 20;
   const expected = "8bd4da,";
 
   const UUIDController = new UUIDFolder();
@@ -25,7 +25,7 @@ test("Sanity check, processes minLength correctly", () => {
   //Can't have it dynamic - otherwise what are we testing for xD
   const uuid = "8b4da03b-88b2-4a63-a55a-940eff4c549a";
   const minLength = 11;
-  const maxLength = 0;
+  const maxLength = 20;
   const expected = "8b4da03b-88b2";
 
   const UUIDController = new UUIDFolder();
