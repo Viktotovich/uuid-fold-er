@@ -1,3 +1,7 @@
+//utils
+import { randomUUID } from "crypto";
+
+//Class
 import UUIDFolder from ".";
 
 test("It works", () => {
@@ -36,4 +40,23 @@ test("Throws on minLength x maxLength mismatch", () => {
   const UUIDController = new UUIDFolder(minLength, maxLength);
 
   expect(UUIDController.shorten(uuid)).toBe(typeof Error);
+});
+
+//Methods testing
+test("Normalization works", () => {
+  const uuid = randomUUID();
+  const URLFormat = new URL(`https://example.com/blogs/tests/${uuid}`);
+
+  const UUIDController = new UUIDFolder(2, 10);
+
+  expect(UUIDController.normalize(URLFormat)).toBe(uuid);
+});
+
+test("Normalization Double Check", () => {
+  const uuid = randomUUID();
+  const URLFormat = `/${uuid}`;
+
+  const UUIDController = new UUIDFolder(2, 10);
+
+  expect(UUIDController.normalize(URLFormat)).toBe(uuid);
 });
