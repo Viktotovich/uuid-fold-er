@@ -1,5 +1,6 @@
 //utils
 import { randomUUID } from "crypto";
+import UUIDError from "./uuid_error";
 
 //Class
 import UUIDFolder from ".";
@@ -9,11 +10,10 @@ test("It works", () => {
 });
 
 test("Shortens the UUID", () => {
-  //Can't have it dynamic - otherwise what are we testing for xD
   const uuid = "8b4da03b-88b2-4a63-a55a-940eff4c549a";
-  const minLength = 6;
+  const minLength = 5;
   const maxLength = 20;
-  const expected = "8bd4da,";
+  const expected = "8b4da";
 
   const UUIDController = new UUIDFolder();
   UUIDController.init(minLength, maxLength);
@@ -22,11 +22,10 @@ test("Shortens the UUID", () => {
 });
 
 test("Sanity check, processes minLength correctly", () => {
-  //Can't have it dynamic - otherwise what are we testing for xD
   const uuid = "8b4da03b-88b2-4a63-a55a-940eff4c549a";
   const minLength = 11;
   const maxLength = 20;
-  const expected = "8b4da03b-88b2";
+  const expected = "8b4da03b-88";
 
   const UUIDController = new UUIDFolder();
   UUIDController.init(minLength, maxLength);
@@ -42,7 +41,7 @@ test("Throws on minLength x maxLength mismatch", () => {
   const UUIDController = new UUIDFolder();
   UUIDController.init(minLength, maxLength);
 
-  expect(UUIDController.process(uuid)).toBe(typeof Error);
+  expect(() => UUIDController.process(uuid)).toThrow(UUIDError);
 });
 
 //Methods testing

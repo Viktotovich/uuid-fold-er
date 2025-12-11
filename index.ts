@@ -54,7 +54,7 @@ class UUIDFolder {
     const uuidInMemory = this.memory.get(uuidBase);
 
     //never existed in memory, safe to save
-    if (typeof uuidInMemory == undefined || !uuidInMemory) {
+    if (!uuidInMemory) {
       this.memory.set(uuidBase, {
         children: new Set(),
       });
@@ -69,6 +69,7 @@ class UUIDFolder {
       const newUUID = this.recursivelyGetShortenedUUID(parentMap, safeUUID, 0);
       parentMap!.children.add(newUUID);
 
+      return newUUID;
       //exists in memory, check if conflicting
     } else {
       //TODO:
@@ -78,6 +79,8 @@ class UUIDFolder {
         0
       );
       uuidInMemory.children.add(newUUID);
+
+      return newUUID;
     }
   }
 
@@ -99,8 +102,7 @@ class UUIDFolder {
   }
 
   private getUUIDBase(uuid: string) {
-    const uuidParts = uuid.slice(0, 3);
-    return uuidParts[0];
+    return uuid.slice(0, 3);
   }
 
   private conflictCheck(map: UUIDBase, uuid: string) {
