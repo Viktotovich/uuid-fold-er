@@ -18,34 +18,56 @@ type UUIDBase = {
 };
 
 export interface UUIDStore {
-  get(base: string): Promise<UUIDBase | null>;
-  set(base: string, value: UUIDBase): Promise<void>;
+  ensureBase(base: string): Promise<void>;
   addChild(base: string, child: string): Promise<void>;
+  hasChild(base: string, child: string): Promise<boolean>;
+}
+
+//For testing ONLY
+class UUIDSessionStore implements UUIDStore {
+  store: Map<string, UUIDBase>;
+  constructor() {
+    this.store = new Map();
+  }
+
+  //Async due to enforced Promise type, as prod will use db
+  async ensureBase(base: string) {
+    //never existed in memory, safe to save
+    if (!this.store.has(base)) {
+      await this.store.set(base, {
+        //New set, we know 100% this has never existed
+        children: new Set(),
+      });
+    }
+  }
+
+  // Without exposing the children which may make typing with db a pain
+  async hasChild(base: string, child: string): Promise<boolean> {
+    //Force a boolean
+    return (await this.store.get(base)?.children.has(child)) ?? false;
+  }
+
+  //Straightforward
+  async addChild(base: string, child: string) {
+    const parent = await this.store.get(base);
+    parent?.children.add(child);
+  }
 }
 
 class UUIDFolder {
   minLength: number;
   maxLength: number;
-  memory: Map<string, UUIDBase>; // UUID bucket w/ previous iterations
-  type: "session" | "db";
+  memory: UUIDStore; // UUID bucket w/ previous iterations
 
-  constructor(type: "session" | "db") {
-    this.type = type;
-    this.minLength = 3;
-    this.maxLength = 32; // 0 for no maxLength
-    this.memory = new Map(); //To avoid conflict
+  constructor(minLength: number = 3, maxLength: number = 32, store: UUIDStore) {
+    this.minLength = minLength;
+    this.maxLength = maxLength; // 0 for no maxLength
+    this.memory = store;
     /*Future consideration: 
     - Custom UUID base setups
     - Base should NOT be longer than the minLength of the returned short UUID.
     As then there will be high risk of conflicts
     */
-  }
-
-  init(min: number, max: number) {
-    this.changeMinLength(min);
-    this.changeMaxLength(max === 0 ? 36 : max);
-
-    //If minLength is longer than maxLength
     this.mismatchCheck();
   }
 
@@ -69,7 +91,7 @@ class UUIDFolder {
     }
   }
 
-  process(uuid: string | URL) {
+  async process(uuid: string | URL) {
     /*Check if URL, if URL - get just the ending part of the path
 
     i.e: https://example.com/foo/bar/baz/<uuid> turns into just <uuid>
@@ -80,38 +102,19 @@ class UUIDFolder {
     const uuidBase = this.getUUIDBase(safeUUID);
 
     //Check if exists, if not, create new
-    const uuidInMemory = this.memory.get(uuidBase);
+    await this.memory.ensureBase(uuidBase);
 
-    //never existed in memory, safe to save
-    if (!uuidInMemory) {
-      this.memory.set(uuidBase, {
-        children: new Set(),
-      });
+    //Recursively get shortned UUID
+    const newUUID = await this.recursivelyGetShortenedUUID(
+      uuidBase,
+      safeUUID,
+      0
+    );
 
-      //get the parent we just set
-      const parentMap = this.memory.get(uuidBase);
+    //Save child to memory to avoid conflict
+    await this.memory.addChild(uuidBase, newUUID);
 
-      //It will 100% exist, just TS complaining if we dont add this
-      if (!parentMap) return;
-
-      //Add the new child
-      const newUUID = this.recursivelyGetShortenedUUID(parentMap, safeUUID, 0);
-      parentMap!.children.add(newUUID);
-
-      return newUUID;
-      //exists in memory, check if conflicting
-    } else {
-      //Recursively get the 0-conflict shortned UUID Url
-      const newUUID = this.recursivelyGetShortenedUUID(
-        uuidInMemory,
-        safeUUID,
-        0
-      );
-      //Save the newUUID into memory, so we later can check for conflicts
-      uuidInMemory.children.add(newUUID);
-
-      return newUUID;
-    }
+    return newUUID;
   }
 
   //Take a possible URL, convert it into a pure/safe UUID string
@@ -129,9 +132,9 @@ class UUIDFolder {
   /* minL must not be higher than maxL, otherwise, no shortned URL can be
   produced */
   private mismatchCheck() {
-    return this.minLength >= this.maxLength
-      ? new UUIDError("Min Length cannot be longer than Max Length")
-      : null;
+    if (this.minLength >= this.maxLength) {
+      throw new UUIDError("Min Length cannot be longer than Max Length");
+    }
   }
 
   /*
@@ -160,16 +163,16 @@ class UUIDFolder {
    * Checks if the generated value already exists in the children of a common
    * parent base (in other words, is there a conflict?)
    */
-  private conflictCheck(map: UUIDBase, uuid: string) {
-    return map.children.has(uuid);
+  private async conflictCheck(base: string, newUUID: string) {
+    return await this.memory.hasChild(base, newUUID);
   }
 
   //Recursively gets the shortned URL with the conflictCheck Helper function
-  private recursivelyGetShortenedUUID(
-    map: UUIDBase,
+  private async recursivelyGetShortenedUUID(
+    base: string,
     uuid: string,
     iterationCount: number
-  ): string {
+  ): Promise<string> {
     /* Looks weird at first, but remember, we're in recurssion now.
      * This could be the nth iteration, and charsAllowed makes sure
      * we are going forward (in characters).
@@ -189,25 +192,36 @@ class UUIDFolder {
      * This is what "makes" the shortned URL*/
     const unsafeShortnedUUID = uuid.slice(0, charsAllowed);
 
-    const hasConflict = this.conflictCheck(map, unsafeShortnedUUID);
+    const hasConflict = await this.conflictCheck(base, unsafeShortnedUUID);
 
     //If no conflict, the UUID is safe for use
     if (!hasConflict) return unsafeShortnedUUID;
 
     //If conflict, iterate & increase by 1 character limit
-    return this.recursivelyGetShortenedUUID(map, uuid, iterationCount + 1);
+    return await this.recursivelyGetShortenedUUID(
+      base,
+      uuid,
+      iterationCount + 1
+    );
   }
 }
 
+const store = new UUIDSessionStore();
+
+export { store, UUIDSessionStore };
 //To be used as a signleton
 export default UUIDFolder;
 
 /*
 Usage with db:
   export class YourDBStore implements UUIDStore {
-    async get(){}
-    async set(){}
+    store: <yourdbtype>
+    constructor(store){
+      this.store = store << your db
+    }
+    async esureBase(){}
     async addChild(){}
+    async hasChild(){}
   } 
 
   Testing to be handled on your end, as it is currently tested only for
