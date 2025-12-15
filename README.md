@@ -46,7 +46,7 @@ export class YourDBStore implements UUIDStore {
     // It takes a common base and adds children
     /* 
     i.e: 2 common URLs of 3ba123 3ba421, have a parent of 3ba, and 
-    children of 1) /3ba1 and /3ba4
+    children of (1) /3ba1 and (2) /3ba4
     */
     /* Example
     await this.store.updateOne(
