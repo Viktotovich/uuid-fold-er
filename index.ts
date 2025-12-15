@@ -130,7 +130,7 @@ class UUIDFolder {
   produced */
   private mismatchCheck() {
     return this.minLength >= this.maxLength
-      ? new Error("Min Length cannot be longer than Max Length")
+      ? new UUIDError("Min Length cannot be longer than Max Length")
       : null;
   }
 
