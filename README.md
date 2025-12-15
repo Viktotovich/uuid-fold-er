@@ -26,12 +26,19 @@ provide a custom storage adapter that implements the `UUIDStore` interface.
 import { UUIDStore } from "./<foo_bar_baz>.ts";
 
 export class YourDBStore implements UUIDStore {
-  async get(base: string) {
-    // For getting the base/slug
+  store: any; // Replace with your DB client
+
+  constructor(store: any /*DO NOT KEEP IT ANY!!!!!*/) {
+    this.store = store;
   }
 
-  async set(base: string, value) {
-    // For setting the base/slug
+  async ensureBase(base: string) {
+    /* Example
+    const existing = await this.store.findOne({ base });
+    if (!existing) {
+      await this.store.insertOne({ base, children: [] });
+    }
+    */
   }
 
   async addChild(base: string, child: string) {
@@ -40,6 +47,18 @@ export class YourDBStore implements UUIDStore {
     /* 
     i.e: 2 common URLs of 3ba123 3ba421, have a parent of 3ba, and 
     children of 1) /3ba1 and /3ba4
+    */
+    /* Example
+    await this.store.updateOne(
+      { base },
+      { $addToSet: { children: child } }
+    );
+    */
+  }
+  async addChild(base: string, child: string) {
+    /* Example
+    const record = await this.store.findOne({ base, children: child });
+    return !!record; << Forces boolean
     */
   }
 }
@@ -51,14 +70,13 @@ export class YourDBStore implements UUIDStore {
 ```ts
 import UUIDFolder from ".";
 import { YourDBStore } from "./bin/uuid_with_db.ts";
+import { yourDbClient } from "./foo/bar/lucid.ts";
 
-const store = new YourDBStore();
-//session opt is used just for testing, not valid in prod
-const uuidController = new UUIDFolder("db");
-// Initialize with min and max lengths
-uuidController.init(store, 5, 20);
+const store = new YourDBStore(yourDbClient);
 
-// Setting 0 for maxLength defaults to the maximum possible value
+// To provide: minLength of the shortned url, max length, and the store
+// Side note: setting 0 for maxLength defaults to the maximum possible value
+const uuidFolder = new UUIDFolder(5, 20, store);
 
 const uuid = "8b4da03b-88b2-4a63-a55a-940eff4c549a";
 
