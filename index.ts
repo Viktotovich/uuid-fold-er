@@ -17,12 +17,20 @@ type UUIDBase = {
   children: Set<string>;
 };
 
+export interface UUIDStore {
+  get(base: string): Promise<UUIDBase | null>;
+  set(base: string, value: UUIDBase): Promise<void>;
+  addChild(base: string, child: string): Promise<void>;
+}
+
 class UUIDFolder {
   minLength: number;
   maxLength: number;
   memory: Map<string, UUIDBase>; // UUID bucket w/ previous iterations
+  type: "session" | "db";
 
-  constructor() {
+  constructor(type: "session" | "db") {
+    this.type = type;
     this.minLength = 3;
     this.maxLength = 32; // 0 for no maxLength
     this.memory = new Map(); //To avoid conflict
@@ -193,3 +201,15 @@ class UUIDFolder {
 
 //To be used as a signleton
 export default UUIDFolder;
+
+/*
+Usage with db:
+  export class YourDBStore implements UUIDStore {
+    async get(){}
+    async set(){}
+    async addChild(){}
+  } 
+
+  Testing to be handled on your end, as it is currently tested only for
+  per-session basis (which doesn't have a layer of persistance to it).
+  */
