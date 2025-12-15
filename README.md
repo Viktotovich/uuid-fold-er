@@ -85,3 +85,7 @@ const shortUUID = uuidController.process(uuid);
 
 console.log(shortUUID); // e.g. "8bd4d"
 ```
+
+### See it Live
+
+[The implementation is (going to be) used in Penguino Social. Explore the implementation here:](https://github.com/Viktotovich/penguino/tree/main)
